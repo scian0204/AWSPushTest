@@ -73,31 +73,28 @@ public class SnsController {
     @GetMapping("/getTopicArns")
     public List<String> getTopicArns() {
         SnsClient snsClient = credentialService.getSnsClient();
-        List<Topic> topics = snsClient.listTopics().topics();
-        List<String> topicArns = new ArrayList<>();
-        topics.forEach(topic -> {
-            topicArns.add(topic.topicArn());
-        });
+        List<String> topicArns = snsClient.listTopics().topics()
+                                                        .stream()
+                                                        .map(Topic::topicArn)
+                                                        .toList();
         return topicArns;
     }
 
     @GetMapping("/getSubscriptionByTopic/{topicArn}")
     public List<String> getSubsByTopic(@PathVariable String topicArn) {
         SnsClient snsClient = credentialService.getSnsClient();
-        List<Subscription> subscriptions = null;
         List<String> res = new ArrayList<>();
         try {
-            subscriptions = snsClient.listSubscriptionsByTopic(builder -> {
+            res = snsClient.listSubscriptionsByTopic(builder -> {
                 builder.topicArn(topicArn).build();
-            }).subscriptions();
+            }).subscriptions()
+                    .stream()
+                    .map(Subscription::subscriptionArn)
+                    .toList();
         } catch (Exception e) {
             res.add(e.getMessage());
             return res;
         }
-
-        subscriptions.forEach(subscription -> {
-            res.add(subscription.subscriptionArn());
-        });
 
         return res;
     }
